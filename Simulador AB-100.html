@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador AB-100</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f5;--sheet:#ffffff;--tx:#14202e;--mut:#5a6878;--bd:#d3dae3;--ac:#0b6b8a;--acbg:#e1f1f6;
+  --ok:#17703a;--okbg:#e3f4e9;--bad:#b3261e;--badbg:#fbe9e7;--tip:#fff4d6;--tipbd:#e0b64a;--warn:#f1e3ff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f161e;--sheet:#1d2b38;--tx:#e6ecf3;--mut:#b2c0ce;--bd:#415466;--ac:#5cc0df;--acbg:#163b49;
+    --ok:#6fd49a;--okbg:#10301d;--bad:#ff8f86;--badbg:#3a1714;--tip:#35290c;--tipbd:#a9822a;--warn:#2d1f40;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f161e;--sheet:#1d2b38;--tx:#e6ecf3;--mut:#b2c0ce;--bd:#415466;--ac:#5cc0df;--acbg:#163b49;
+  --ok:#6fd49a;--okbg:#10301d;--bad:#ff8f86;--badbg:#3a1714;--tip:#35290c;--tipbd:#a9822a;--warn:#2d1f40;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:820px;margin:0 auto;padding:28px 20px 70px}
+h1{font-size:clamp(1.65rem,4vw,2.1rem);letter-spacing:-.03em;line-height:1.2;margin:6px 0 4px}
+h2{font-size:1.2rem;margin:24px 0 8px}
+h3{font-size:1.02rem;margin:14px 0 4px}
+p{margin:6px 0}
+.mut{color:var(--mut)}
+.tabs{display:flex;gap:6px;margin:24px 0 22px;padding:5px;background:var(--sheet);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(35,42,70,.1)}
+.tab{flex:1;background:transparent;border:0;border-radius:10px;padding:11px 4px;font:inherit;font-weight:700;color:var(--mut);cursor:pointer;transition:.2s}
+.tab[aria-selected="true"]{color:var(--ac);border-bottom-color:var(--ac)}
+button:focus-visible,select:focus-visible,label:focus-within{outline:3px solid var(--ac);outline-offset:2px}
+.tab[aria-selected="true"]{background:var(--acbg);box-shadow:0 3px 8px rgba(11,107,138,.12)}
+.btn{font:inherit;font-weight:700;border:2px solid var(--ac);background:var(--ac);color:#fff;padding:12px 18px;border-radius:11px;cursor:pointer;min-height:48px;box-shadow:0 7px 14px rgba(11,107,138,.2);transition:transform .2s,box-shadow .2s}
+.btn:hover:not([disabled]){transform:translateY(-1px);box-shadow:0 10px 18px rgba(11,107,138,.25)}
+:root[data-theme="dark"] .btn,:root:not([data-theme="light"]) .btn{color:#06222c}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn{color:#fff}}
+.btn.ghost{background:var(--acbg);color:var(--ac);border-color:var(--ac);box-shadow:none}
+.btn[disabled]{opacity:.7;cursor:not-allowed}
+.btn.ghost[disabled]{background:var(--acbg);color:var(--mut);border-color:var(--bd);opacity:1}
+:root[data-theme="dark"] .btn.ghost,:root:not([data-theme="light"]) .btn.ghost{color:var(--ac);background:var(--acbg);border-color:var(--ac)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.topics{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.topicbtn{display:flex;justify-content:space-between;align-items:center;text-align:left;font:inherit;background:var(--sheet);color:var(--tx);border:2px solid var(--bd);border-radius:14px;padding:16px;cursor:pointer;min-height:62px;box-shadow:0 5px 14px rgba(35,42,70,.1);transition:.2s}
+.topicbtn:hover{border-color:var(--ac);transform:translateY(-2px);box-shadow:0 10px 20px rgba(35,42,70,.1)}
+.topicbtn b{color:var(--ac)}
+.stat{background:var(--sheet);border:2px solid var(--bd);border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 8px 22px rgba(35,42,70,.1)}
+.bar{height:6px;background:var(--bd);border-radius:3px;overflow:hidden;margin:6px 0 14px}
+.bar>i{display:block;height:100%;background:var(--ac)}
+.qmeta{display:flex;justify-content:space-between;font-size:.9rem;color:var(--mut)}
+.sheet{background:var(--sheet);border:1px solid var(--bd);border-top:5px solid var(--ac);border-radius:16px;padding:22px 20px 22px;box-shadow:0 12px 30px rgba(35,42,70,.08)}
+.stem{font-size:1.06rem;margin:0 0 10px}
+.inst{font-size:.92rem;color:var(--mut);margin:0 0 10px;font-weight:700}
+.opt{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--bd);border-radius:11px;padding:12px 14px;margin:9px 0;cursor:pointer;background:var(--sheet);transition:.15s}
+.opt:hover{border-color:var(--ac);background:var(--acbg)}
+.opt input{margin-top:5px;width:18px;height:18px;flex:none;accent-color:var(--ac)}
+.opt .lt{flex:none;font-weight:700;color:var(--ac);min-width:1.2em}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt.miss{border-color:var(--ok);border-style:dashed}
+.why{display:block;font-size:.93rem;color:var(--mut);margin-top:4px}
+.opt.ok .why,.opt.bad .why{color:var(--tx)}
+.part{margin:14px 0 4px}
+.part label.pl{display:block;font-weight:700;margin-bottom:6px}
+select{width:100%;font:inherit;padding:11px 10px;border:2px solid var(--bd);border-radius:8px;background:var(--sheet);color:var(--tx);min-height:48px}
+select.ok{border-color:var(--ok);background:var(--okbg)}
+select.bad{border-color:var(--bad);background:var(--badbg)}
+.pfb{font-size:.95rem;margin:6px 0 0}
+.pfb.ok b{color:var(--ok)}.pfb.bad b{color:var(--bad)}
+.verdict{margin:14px 0 6px;font-weight:700;font-size:1.05rem}
+.verdict.ok{color:var(--ok)}.verdict.bad{color:var(--bad)}
+.ex{margin:6px 0}
+.tipbox{margin-top:12px;background:var(--tip);border-left:5px solid var(--tipbd);border-radius:6px;padding:10px 12px}
+.warnbox{margin-top:10px;background:var(--warn);border-radius:6px;padding:10px 12px;font-size:.93rem}
+.tagline{font-size:.85rem;color:var(--ac);font-weight:700;margin-bottom:6px}
+.big{font-size:2.6rem;font-weight:700;line-height:1}
+.pass{color:var(--ok)}.fail{color:var(--bad)}
+.mrow{display:flex;justify-content:space-between;border-bottom:1px solid var(--bd);padding:8px 0;gap:10px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.95rem}
+th,td{border-bottom:1px solid var(--bd);padding:8px 8px;text-align:left;vertical-align:top}
+th{background:var(--acbg)}
+ul.t{padding-left:20px;margin:6px 0}
+ul.t li{margin:5px 0}
+.hide{display:none}
+@media (prefers-reduced-motion:no-preference){.bar>i{transition:width .3s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Simulador AB-100</h1>
+  <p class="mut">Práctica interactiva para reforzar conceptos, decisiones y patrones clave.</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabQ" aria-selected="true">Practicar</button>
+    <button class="tab" role="tab" id="tabT" aria-selected="false">Tips y patrones</button>
+  </div>
+  <main id="app"></main>
+  <section id="tips" class="hide"></section>
+</div>
+
+<script>
+/* ---------- utilidades ---------- */
+var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+        set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
+var $app=document.getElementById("app");
+
+/* ---------- banco de preguntas ---------- */
+var Q=[];
+var SN=["Sí","No"];
+function S(t,stem,opts,ex,tip,w){Q.push({id:Q.length,k:"s",t:t,stem:stem,opts:opts,ex:ex,tip:tip,w:w})}
+function M(t,stem,opts,ex,tip,w){Q.push({id:Q.length,k:"m",t:t,stem:stem,opts:opts,ex:ex,tip:tip,w:w})}
+function P(t,stem,parts,ex,tip,w,shared){if(Array.isArray(w)){shared=w;w=undefined}Q.push({id:Q.length,k:"p",t:t,stem:stem,parts:parts,shared:shared,ex:ex,tip:tip,w:w})}
+
+/* 1 */
+P("Monitoreo y pruebas","Una empresa implementa un agente de Microsoft Copilot Studio que se integra con un flujo de escritorio de Power Automate. Debe recomendar una solución de pruebas que cumpla dos requisitos: los casos de prueba deben validar los cambios más recientes del agente antes de publicarlo, y el flujo debe validarse como parte de la orquestación del agente. ¿Qué debe recomendar para cada requisito?",
+[{l:"Validar los cambios más recientes antes del lanzamiento",c:["Ejecutar pruebas en la versión publicada (producción) del agente","Ejecutar pruebas en la última versión no publicada del agente","Publicar el agente y probarlo con usuarios reales"],a:1,why:"La versión no publicada contiene los cambios nuevos y se prueba sin riesgo para usuarios. Probar la versión de producción no valida lo último; publicar primero introduce riesgo."},
+ {l:"Validar el flujo dentro de la orquestación del agente",c:["Agregar el flujo al agente como herramienta","Agregar el flujo a una aplicación de lienzo","Usar la consola de Power Automate Desktop"],a:0,why:"Los flujos de Power Automate se invocan desde el agente como herramientas. Una app de lienzo solo lo conecta a una interfaz, y la consola de escritorio no participa en la orquestación."}],
+"Se prueba lo no publicado; el flujo entra al agente como herramienta.","Regla: probar ANTES de publicar y en la versión borrador. Flujo + agente = herramienta (tool).");
+
+/* 2 */
+S("Copilot Studio","Una empresa planea implementar un agente de Copilot Studio para mejorar la atención al cliente. Los datos de clientes están en ServiceNow, Dynamics 365 Finance, Dynamics 365 Supply Chain Management y archivos de Excel en SharePoint Online. Debe recomendar una solución para que el agente dé respuestas precisas y oportunas. ¿Qué debe recomendar?",
+[["Implementar un enrutador de modelos que decida qué modelo procesa cada solicitud",0,"Solo elige el modelo de IA; no da conectividad a los sistemas de negocio."],
+ ["Crear prompts personalizados",0,"Los prompts guían el estilo y comportamiento, pero no recuperan datos empresariales en vivo."],
+ ["Implementar conectores de Microsoft Power Platform",1,""],
+ ["Mejorar la eficiencia de indexación de búsqueda",0,"Optimiza la búsqueda, pero no integra varias fuentes de datos con el agente."]],
+"Los conectores de Power Platform integran Copilot Studio con aplicaciones empresariales y devuelven datos en tiempo real.",
+"Varias fuentes de datos distintas = conectores.");
+
+/* 3 */
+P("ALM y despliegue","Una empresa tiene entornos de Power Platform de desarrollo, ensayo y producción. Cada entorno tiene sus propias tablas de Dataverse e índice de Azure AI Search. El agente Agente1 (en desarrollo) usa como grounding la tabla Pedidos de clientes y el índice Conocimiento de clientes. Al implementarlo en producción debe usar las fuentes de producción, minimizar el tiempo de inactividad y manejar credenciales y endpoints de forma segura. ¿Qué debe incluir en el paquete de la solución y qué debe reconfigurar después de la implementación?",
+[{l:"Incluir en el paquete de la solución",c:["Agente1 y referencias a las fuentes de datos","Agente1 con conexiones y credenciales de producción incrustadas","Solo Agente1, sin referencias a datos"],a:0,why:"El paquete lleva el agente y referencias, no configuraciones fijas por entorno. Incrustar conexiones reduce la portabilidad."},
+ {l:"Reconfigurar después de la implementación",c:["Variables de entorno","Las conexiones, manualmente","El índice de búsqueda, recreándolo"],a:0,why:"Las variables de entorno guardan endpoints, nombres de índice y URL por entorno, y se actualizan sin tocar la solución."}],
+"Paquete = agente + referencias. Lo que cambia por entorno = variables de entorno.",
+"Cada vez que veas «endpoints/índices distintos por entorno», responde variables de entorno.");
+
+/* 4 */
+S("Monitoreo y pruebas","Está creando criterios de validación para un modelo de IA generativa personalizado que produce informes de negocio a partir de datos internos. Debe evaluar si las salidas son adecuadas y significativas para esos informes. ¿Qué métricas debe usar?",
+[["Adopción y engagement de los usuarios",0,"Mide uso, no la calidad de los informes generados."],
+ ["Alineación de la salida con tareas específicas del dominio",1,""],
+ ["Eficiencia de inferencia e infraestructura",0,"Es rendimiento del sistema, no relevancia del contenido."],
+ ["Duración del entrenamiento del modelo",0,"No tiene relación directa con la utilidad de lo generado."]],
+"Medir si el contenido es útil, exacto y relevante para el contexto de negocio es evaluar la alineación al dominio.",
+"«Adecuado y significativo» = alineado al dominio. Nunca velocidad de entrenamiento.");
+
+/* 5 */
+S("ROI y costos","Una empresa con un entorno de Azure para varias unidades de negocio planea una solución de IA que analizará el sentimiento de reseñas de productos. Debe evaluar el costo potencial de la solución para apoyar el análisis de retorno de la inversión en IA (ROAI). ¿Qué debe usar?",
+[["Azure Cost Management",0,"Se usa después del despliegue para monitorear y optimizar el gasto real."],
+ ["Estimador de capacidad de Microsoft Fabric",0,"Estima capacidad de Fabric; no es evaluación general de costo de IA."],
+ ["Calculadora de TCO (costo total de propiedad) de Azure",1,""],
+ ["Reservas de Azure",0,"Reducen costos con precios reservados, pero no estiman el costo de la solución."]],
+"La calculadora de TCO estima y compara costos antes de implementar, ideal para la justificación de negocio.",
+"ANTES de desplegar = calculadora TCO. DESPUÉS = Cost Management.");
+
+/* 6 */
+P("Copilot Studio","Debe diseñar una solución multiagente que incluya un agente personalizado. Requisitos: definir las reglas y restricciones que debe seguir el agente, y automatizar un proceso backend de movimiento de datos entre servicios que se ejecute independientemente de los pasos de razonamiento del agente. ¿Qué debe incluir para cada requisito?",
+[{l:"Definir reglas y restricciones del agente",a:0,why:"Los temas de conversación controlan el comportamiento: lógica de respuesta, ramificaciones, reglas de negocio y restricciones."},
+ {l:"Automatizar proceso backend independiente del razonamiento",a:3,why:"Los flujos en la nube de Power Automate hacen integraciones, aprobaciones y movimiento de datos fuera del razonamiento del agente."}],
+"Reglas del agente = temas. Backend independiente = flujo en la nube.","Power Pages es para sitios web y portales; no es automatización backend.",
+["Temas de conversación","Flujos de agente","Power Pages","Flujo en la nube de Power Automate"]);
+
+/* 7 */
+S("Dynamics 365","Una empresa usa Dynamics 365 Finance para cuentas por pagar y diseña una solución de IA para procesar facturas. Debe recomendar los requisitos previos para configurar un copilot prediseñado de cuentas por pagar. ¿Qué debe recomendar?",
+[["Crear un agente personalizado en Copilot Studio",0,"No se necesita agente personalizado: es una capacidad prediseñada."],
+ ["Usar Microsoft 365 Copilot para ventas",0,"Está pensado para ventas, no para facturas de cuentas por pagar."],
+ ["Crear una herramienta de IA personalizada en Microsoft Foundry",0,"Innecesario cuando existe el copilot prediseñado."],
+ ["Desde el centro de administración de Power Platform, asignar a los usuarios el rol de seguridad de IA de Finance and Operations",1,""]],
+"Los usuarios necesitan el rol de seguridad de IA de Finance and Operations para usar las funciones de copilot en Finance.",
+"Prediseñado = configurar permisos/roles, no construir nada.");
+
+/* 8 */
+P("Copilot Studio","Debe diseñar un agente de Copilot Studio que admita respuestas de voz interactivas y que optimice la toma de decisiones y la precisión de las respuestas. ¿Qué debe incluir para cada requisito? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Admitir respuestas de voz interactivas",a:0,why:"Las funciones de voz de Copilot Studio son la capacidad integrada de más alto nivel. Azure AI Speech es el servicio de fondo, y SSML solo personaliza la salida (tono, pronunciación)."},
+ {l:"Optimizar la toma de decisiones y la precisión",a:4,why:"Un modelo de razonamiento profundo ofrece razonamiento de varios pasos y respuestas más precisas."}],
+"Voz = funciones de voz de Copilot Studio. Precisión/decisiones = razonamiento profundo.","En diseño de solución, el examen prefiere la capacidad de alto nivel de Copilot Studio y no el servicio de Azure de fondo.",
+["Funciones de voz de Copilot Studio","Azure AI Speech","SSML","Azure Language en Foundry Tools","Modelo de razonamiento profundo"]);
+
+/* 9 */
+S("Monitoreo y pruebas","Una empresa usa varios agentes de Copilot Studio en distintos canales. Debe recomendar una solución de monitoreo que ofrezca telemetría completa e información de rendimiento de los agentes. ¿Qué debe incluir?",
+[["Application Insights",1,""],
+ ["Azure Advisor",0,"Da recomendaciones de buenas prácticas, no telemetría de ejecución."],
+ ["Azure DevOps",0,"Es para desarrollo, control de código y CI/CD."],
+ ["Microsoft Forms",0,"Recoge encuestas, no telemetría."]],
+"Application Insights recoge telemetría, tiempos de respuesta, fallos y dependencias, y se integra con Azure Monitor.",
+"Telemetría de agentes = Application Insights.");
+
+/* 10 */
+S("Copilot Studio","Una empresa usa un agente de Copilot Studio para automatizar tareas en una aplicación web. En las pruebas se descubre que la automatización falla a veces porque la interfaz de usuario de la app cambia con frecuencia. Debe recomendar una solución que garantice la automatización y minimice los cambios en el agente. ¿Qué debe incluir?",
+[["Uso del equipo (computer use) en Copilot Studio",1,""],
+ ["Desarrollo y personalización de modelos de IA",0,"No resuelve la automatización de interfaces."],
+ ["Temas de conversación",0,"Controlan el diálogo, no la interacción con aplicaciones."],
+ ["Orquestación de flujos de trabajo",0,"Orquesta procesos, pero no soluciona fallos por cambios de interfaz."]],
+"Computer use usa interacción guiada por IA y reconoce los elementos de pantalla dinámicamente, así resiste cambios de UI.",
+"Cambios de UI o sin API = computer use.");
+
+/* 11 */
+S("Monitoreo y pruebas","Evalúa un agente de Copilot Studio que apoya a representantes de Dynamics 365 Customer Service. Debe recomendar una solución de pruebas que evalúe la eficacia del agente durante sesiones activas, valide que las respuestas sean precisas y útiles, y dé información medible y accionable para la mejora continua. ¿Qué debe recomendar?",
+[["Hacer seguimiento de resolución, deflexión y precisión mediante paneles, y usar scripts para garantizar respuestas consistentes",1,""],
+ ["Probar la escalabilidad con un alto volumen de chats",0,"Mide rendimiento bajo carga, no calidad conversacional."],
+ ["Analizar el rendimiento histórico del soporte",0,"No evalúa directamente al agente de Copilot Studio."],
+ ["Medir la disponibilidad de la infraestructura",0,"Mide disponibilidad del sistema, no precisión ni valor de negocio."]],
+"Resolución, deflexión y precisión miden el desempeño real; los paneles dan insights y los scripts aseguran consistencia.",
+"Eficacia del agente = resolución + deflexión + precisión.");
+
+/* 12 */
+P("Monitoreo y pruebas","Diseña escenarios de prueba de extremo a extremo para una solución que usa Dynamics 365 Sales y Dynamics 365 Finance. ¿Qué tipo de prueba debe usar para cada requisito? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Intercambia datos correctamente entre las aplicaciones de Dynamics 365",a:0,why:"Las pruebas de integración validan que sistemas, API y flujos se comunican bien y los datos fluyen sin errores."},
+ {l:"Se alinea con los flujos de usuario y procesos de negocio definidos",a:1,why:"La UAT valida con usuarios finales que la solución cumple expectativas y procesos reales."}],
+"Integración = datos entre apps. UAT = procesos de negocio y usuarios.","Deriva (drift) = cambio del comportamiento del modelo en el tiempo. Exploratoria = informal. Rendimiento = escala y velocidad.",
+["Pruebas de integración","Pruebas de aceptación de usuario (UAT)","Pruebas de deriva (drift)","Pruebas exploratorias","Pruebas de rendimiento"]);
+
+/* 13 */
+S("Foundry y MCP","Una empresa usa agentes de Microsoft Foundry. Debe asegurar que un agente pueda usar herramientas externas dinámicamente en tiempo de ejecución sin actualizar el agente. ¿Qué debe incluir en la solución?",
+[["Microsoft Foundry Hub",0,"Organiza recursos y proyectos de IA; no descubre herramientas en tiempo de ejecución."],
+ ["Un servidor de Protocolo de contexto de modelo (MCP)",1,""],
+ ["Azure AI Search",0,"Indexa y recupera datos; no ejecuta herramientas dinámicamente."],
+ ["Microsoft Copilot Studio",0,"Crea agentes conversacionales, pero no es el mecanismo de interoperabilidad de herramientas."]],
+"MCP es una interfaz estándar con la que el agente descubre y usa herramientas en tiempo de ejecución; se agregan o cambian sin redesplegar el agente.",
+"MCP = el USB-C de la IA: un solo estándar para conectar agentes con herramientas y datos.");
+
+/* 14 */
+P("Gobernanza y seguridad","Una empresa implementa agentes que generan respuestas con recursos de Azure OpenAI, desplegados en Estados Unidos y Europa. Debe recomendar una solución de gobernanza que obligue a desplegar los recursos solo en regiones aprobadas y que verifique continuamente el cumplimiento. ¿Qué debe incluir para cada requisito?",
+[{l:"Forzar el despliegue solo en regiones aprobadas",a:0,why:"Azure Policy crea reglas que niegan la creación de recursos fuera de las regiones permitidas."},
+ {l:"Verificación continua de cumplimiento",a:1,why:"Defender for Cloud evalúa de forma continua los recursos contra estándares de seguridad y cumplimiento y recomienda correcciones."}],
+"Policy PROHÍBE (regiones). Defender for Cloud VIGILA (cumplimiento continuo).","Monitor = telemetría. Purview = gobernanza de datos. Sentinel = detección de amenazas (SIEM).",
+["Azure Policy","Defender for Cloud","Azure Monitor","Microsoft Purview","Microsoft Sentinel"]);
+
+/* 15 */
+S("Copilot Studio","Diseña una solución de IA de bajo código con Copilot Studio. Debe incluir un agente que automatice tareas simulando interacciones de usuario en aplicaciones y sitios de terceros: hacer clic en botones, escribir texto y extraer información de las pantallas. ¿Qué debe recomendar?",
+[["Protocolo de contexto de modelo (MCP)",0,"Conecta con herramientas y servicios, pero no automatiza interfaces gráficas."],
+ ["Modelos NLU plus",0,"Se centra en comprensión de lenguaje e intenciones."],
+ ["Uso del equipo (computer use) en Copilot Studio",1,""],
+ ["Habilidades (skills) de Copilot",0,"Amplían funciones del agente, pero no simulan interacciones en pantalla."]],
+"Computer use automatiza interfaces como un humano, incluso cuando no hay API disponible.",
+"Clics, escribir y leer pantallas = computer use.");
+
+/* 16 */
+S("Datos y conocimiento","Una solución de Power Platform contiene tablas de Dataverse, un área de trabajo de Power BI (WS1), una app de lienzo (App1) que usa Dataverse y un modelo semántico de Power BI conectado a Dataverse con DirectQuery. Planea usar IA generativa para responder consultas basadas en un subconjunto de datos corporativos. Debe asegurar que los datos estén disponibles como fuente de grounding para los sistemas de IA. ¿Qué debe hacer?",
+[["Rellenar una tabla de Dataverse",0,"Innecesario: los datos ya existen; el tema es gobernanza y preparación para IA."],
+ ["Compartir el área de trabajo de Power BI",0,"Solo da acceso a usuarios; no establece el modelo como fuente de confianza."],
+ ["Respaldar (endorse) el modelo semántico",1,""],
+ ["Exportar el modelo semántico",0,"No lo habilita como fuente gobernada para IA."]],
+"Un modelo semántico respaldado queda marcado como fuente confiable y gobernada, apta para grounding.",
+"Datos de Power BI para IA = modelo semántico respaldado (endorsed).");
+
+/* 17 */
+P("ALM y despliegue","Una empresa planea una solución de IA con un agente de Copilot Studio y un agente de Microsoft Foundry, almacenada en un repositorio de código. Debe recomendar el método de despliegue para cada agente. Requisitos: probar en un entorno de pruebas antes de producción, aislar producción del desarrollo y las pruebas, y que el despliegue sea repetible, totalmente automatizado y sin intervención manual.",
+[{l:"Agente de Copilot Studio",a:0,why:"Los pipelines de implementación de Power Platform promueven soluciones entre dev, test y prod con aislamiento y gobernanza."},
+ {l:"Agente de Microsoft Foundry",a:1,why:"Azure DevOps ofrece CI/CD empresarial para Azure AI, integrado con repositorios, pruebas y releases repetibles."}],
+"Copilot Studio → pipelines de Power Platform. Foundry → pipelines de Azure DevOps.","Exportar/importar manual no es automatizado. Bicep define infraestructura pero no orquesta el ciclo completo.",
+["Pipeline de implementación de Power Platform","Pipeline de Azure DevOps (ADO)","Exportar e importar soluciones manualmente","Archivos Bicep"]);
+
+/* 18-20 */
+P("Dynamics 365","Una empresa usa Microsoft 365 y Dynamics 365. Debe recomendar una solución que resuma automáticamente hilos de correo, genere respuestas sugeridas en Outlook y entregue resúmenes de preparación de reuniones con datos relevantes del CRM. Para cada solución propuesta, indique si cumple el objetivo.",
+[{l:"Solución: recomendar Microsoft 365 Copilot para ventas",a:0,c:SN,why:"Integra Outlook y Teams con el CRM (Dynamics 365): resume correos, sugiere respuestas y prepara reuniones con datos de clientes."},
+ {l:"Solución: recomendar un flujo de trabajo clásico de Dataverse",a:1,c:SN,why:"Los workflows clásicos son automatización por reglas; no tienen IA generativa para resumir ni redactar."},
+ {l:"Solución: recomendar una plantilla de agente de Microsoft 365 Copilot",a:1,c:SN,why:"Una plantilla genérica no entrega por sí sola las capacidades de ventas integradas con el CRM."}],
+"Resumir correos + respuestas en Outlook + preparación con CRM = Copilot para ventas.","Serie de preguntas con el mismo enunciado y distinta solución: analiza cada solución como si fuera nueva.");
+
+/* 21 */
+P("Datos y conocimiento","Una empresa con Microsoft 365 E5 usa Copilot Studio. Tiene una biblioteca de SharePoint Online con 10 000 PDF de políticas de varios departamentos, con una columna Departamento completada en cada PDF. Debe diseñar un agente que use la biblioteca como fuente de conocimiento. Requisitos: responder preguntas sobre políticas e identificar qué departamentos y políticas están relacionados. ¿Qué debe incluir para cada requisito?",
+[{l:"Responder preguntas sobre las políticas",a:0,why:"SharePoint Online es una fuente de conocimiento nativa de Copilot Studio; el agente responde con datos fundamentados."},
+ {l:"Identificar qué departamentos y políticas están conectados",a:4,why:"La herramienta de SharePoint accede a los metadatos (como la columna Departamento) y permite entender esa relación."}],
+"Contenido = SharePoint como fuente de conocimiento. Metadatos/relaciones = herramienta de SharePoint.","Importar PDF a Dataverse, un modelo en Foundry o AI Builder son innecesarios: los archivos ya están en SharePoint.",
+["Desde Copilot Studio, agregar SharePoint como fuente de conocimiento","Crear un modelo personalizado en Microsoft Foundry","Importar los PDF a Dataverse","Usar AI Builder para procesar los documentos","Desde Copilot Studio, configurar la herramienta de SharePoint"]);
+
+/* 22 */
+S("IA responsable","Una empresa de servicios financieros usa Dynamics 365 Finance. El personal de soporte revisa manualmente los historiales de transacciones para detectar posible fraude antes de escalar los casos. Debe recomendar una solución de automatización que garantice que las escalaciones lleguen a un analista humano para la decisión final. ¿Qué debe recomendar?",
+[["Configurar un agente que cierre automáticamente los casos sospechosos",0,"Elimina la revisión humana exigida."],
+ ["Usar Microsoft 365 Copilot en Word",0,"Es productividad de documentos, no automatización de fraude."],
+ ["Configurar un agente de tareas que genere puntuaciones de riesgo de fraude para que las revise el analista humano",1,""],
+ ["Crear informes de Power BI sobre transacciones",0,"Es análisis y reporte, no automatiza revisión ni escalación."]],
+"El agente analiza y puntúa, pero la decisión final sigue siendo humana: diseño con humano en el circuito (human-in-the-loop).",
+"«Decisión final humana» = human-in-the-loop. Si la opción cierra o decide sola, está mal.");
+
+/* 23 */
+M("Monitoreo y pruebas","Un agente de Copilot Studio responde con una base de conocimiento para soporte. Los usuarios reportan que a veces da respuestas inexactas. Debe usar métricas de la pestaña Análisis de Copilot Studio para identificar la causa. ¿Qué DOS opciones debe usar?",
+[["Resultados de encuestas",0,"Mide satisfacción, no explica por qué hay inexactitudes."],
+ ["Información y resultados de las sesiones",0,"Da visión operativa amplia, no se enfoca en la calidad de las respuestas."],
+ ["Uso de temas y temas con baja resolución",1,"Revela dónde falla la lógica conversacional, el mapeo de conocimiento o el manejo de respuestas."],
+ ["Tendencias generales de interacción y escalación",0,"No analiza la calidad de las respuestas generadas."],
+ ["Calidad de las respuestas generadas",1,"Evalúa relevancia y grounding; detecta contenido desactualizado o respuestas de baja calidad."]],
+"Respuestas inexactas = dónde falla (temas con baja resolución) + qué tan buenas son (calidad de respuestas generadas).",
+"Inexactitud → «calidad de respuestas» + «temas con baja resolución».");
+
+/* 24 */
+P("Dynamics 365","Una empresa usa Dynamics 365 Finance para cuentas por pagar y recuperación de deudas de clientes. Diseña un proceso financiero con IA con estos requisitos: ofrecer información con IA para que el personal identifique facturas vencidas de proveedores y saldos pendientes, y ayudar al personal a reducir el tiempo para revisar facturas vencidas e historial de pagos. ¿Qué funciones de Copilot debe recomendar para cada requisito?",
+[{l:"Identificar facturas vencidas y saldos pendientes con IA",a:0,why:"Según el banco de preguntas, el agente de conciliación de cuentas identifica discrepancias, facturas impagas y saldos vencidos."},
+ {l:"Reducir el tiempo de revisión de facturas vencidas e historial de pagos",a:1,why:"El resumen del coordinador de cobros consolida historial de pagos, saldos y datos de cobranza."}],
+"Conciliación de cuentas → identificar vencidos. Resumen del coordinador de cobros → ahorrar tiempo.","Comunicación con proveedores = comunicación. Analizar planes de demanda = cadena de suministro, no finanzas.",
+["Agente de conciliación de cuentas","Resumen del coordinador de cobros","Agente de comunicación con proveedores","Resúmenes con IA en Copilot","Analizar planes de demanda con Copilot"]);
+Q[Q.length-1].w="Pregunta tomada tal cual del banco del curso. Este mapeo es el que aparece como respuesta; verifica en Microsoft Learn los agentes actuales de Finance antes del examen.";
+
+/* 25 */
+M("ALM y despliegue","Una empresa usa un modelo de Microsoft Foundry ajustado (fine-tuned) que requiere actualizaciones frecuentes con nuevos comentarios de clientes. Debe diseñar un proceso de ALM que cumpla: los cambios de datos deben rastrearse y versionarse, y el modelo debe reentrenarse de forma consistente con datos de entrenamiento aprobados. ¿Qué DOS acciones debe incluir?",
+[["Habilitar el registro de diagnóstico en el recurso de Foundry",0,"Es una actividad operativa; no da gobernanza de ALM de datos."],
+ ["Habilitar filtros de seguridad de contenido en el modelo",0,"Es filtrado de seguridad, no gestión de datos de entrenamiento."],
+ ["Almacenar los datos de entrenamiento en Azure Files",0,"Es almacenamiento compartido, no el preferido para el ciclo de vida de datasets de IA."],
+ ["Cargar los datos de entrenamiento a los archivos de datos de Microsoft Foundry",1,"Son la fuente de verdad controlada para fine-tuning y reentrenamiento repetible."],
+ ["Almacenar los datos de entrenamiento en Azure Blob Storage con control de versiones habilitado",1,"Rastrea cambios, conserva versiones, permite reversión y auditoría."]],
+"Versionado y rastreo = Blob con versiones. Datos aprobados y consistentes = archivos de datos de Foundry.",
+"Blob + versiones + data files de Foundry. Azure Files y content safety nunca.");
+
+/* 26 */
+P("Copilot Studio","Diseña dos agentes de Copilot Studio. Ambos deben usar un modelo estándar y no usar orquestación generativa. El Agente1 debe admitir frases simples y cortas para un tema dado. El Agente2 debe integrarse con el canal de voz de Dynamics 365 Contact Center. ¿Qué modelo de lenguaje debe recomendar para cada agente? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Agente1: frases simples y cortas por tema",a:0,why:"NLU funciona con frases desencadenantes predefinidas y enrutamiento por tema cuando la entrada es corta y predecible."},
+ {l:"Agente2: canal de voz de Dynamics 365 Contact Center",a:1,why:"NLU plus está optimizado para voz e IVR, con mejor extracción de entidades, sin ser generativo."}],
+"NLU = frases cortas por tema. NLU plus = voz y contact center.","Azure OpenAI implica IA generativa, prohibida aquí. CLU y Azure Language no son la selección esperada en este contexto.",
+["NLU","NLU plus","Azure OpenAI","Azure Language en Foundry Tools","Conversational Language Understanding (CLU)"]);
+
+/* 27 */
+S("ALM y despliegue","Una empresa tiene dos entornos de Power Platform: Dev1 y Prod1. El agente Agente1 de Copilot Studio está en una solución de Dev1. Debe ponerlo a disposición de los usuarios de Prod1 minimizando el esfuerzo administrativo. ¿Qué debe hacer?",
+[["Compartir el agente con los usuarios de Prod1",0,"Compartir no despliega el agente en otro entorno."],
+ ["Exportar la solución como no administrada e importarla en Prod1",0,"Las no administradas son para desarrollo y permiten cambios sin control en producción."],
+ ["Exportar la solución como administrada e importarla en Prod1",1,""],
+ ["Volver a crear el agente manualmente en Prod1",0,"Aumenta el esfuerzo y el riesgo de inconsistencias; ignora las buenas prácticas de ALM."]],
+"Las soluciones administradas son el estándar para producción: despliegue controlado y entorno protegido.",
+"Managed = Mercado (producción). Unmanaged = Under construction (desarrollo).");
+
+/* 28 */
+P("Datos y conocimiento","Diseña la estrategia de IA para aplicaciones de Dynamics 365 finanzas y operaciones. Evalúa usar Copilot Studio para ayuda y guía integradas en la aplicación con IA generativa. Debe recomendar qué fuentes de conocimiento incluir en el agente de ayuda generativa. La solución debe minimizar el riesgo de respuestas inexactas.",
+[{l:"Fuentes de conocimiento personalizadas",c:["Deben cargarse al agente","Deben excluirse del agente"],a:0,why:"Las fuentes personalizadas aprobadas dan el grounding confiable con el que el agente responde."},
+ {l:"Conocimiento general de IA",c:["Debe habilitarse para el agente","Debe deshabilitarse para el agente"],a:1,why:"El conocimiento general aumenta el riesgo de alucinaciones y respuestas fuera de las políticas de la organización."}],
+"Menos inexactitud = fuentes propias cargadas + conocimiento general apagado.","Aunque Copilot Studio admite conocimiento general de IA, habilitarlo sube el riesgo de respuestas inexactas.");
+
+/* 29 */
+M("Gobernanza y seguridad","Una empresa tiene agentes de Microsoft 365 Copilot. Debe diseñar una solución de seguridad que: identifique y mitigue riesgos del uso de IA, proteja las apps de IA y los datos sensibles que procesan o generan los agentes, y apoye la gobernanza de IA responsable con retención y registro de interacciones, detección de infracciones de políticas e investigación de incidentes. ¿Qué DOS componentes debe incluir?",
+[["Microsoft Purview",1,"Aporta retención, auditoría, registro de interacciones, eDiscovery y detección de violaciones de políticas."],
+ ["Azure AI Content Safety",0,"Modera contenido dañino; no cubre gobernanza ni monitoreo de seguridad completos."],
+ ["RBAC de Microsoft Foundry",0,"Solo administra permisos y acceso, no la gobernanza ni la investigación de incidentes."],
+ ["Microsoft Defender",1,"Detecta amenazas, monitorea y protege las apps de IA y los datos sensibles."]],
+"Gobernanza y cumplimiento (Purview) + protección y amenazas (Defender).",
+"Purview + Defender = el dúo para seguridad y gobernanza de IA.");
+
+/* 30 */
+S("Datos y conocimiento","Una empresa minorista planea implementar agentes de Copilot Studio para Dynamics 365 Commerce y una solución de inventario en Power Apps. Debe recomendar una solución para organizar los datos del catálogo de productos como fuente consistente para varios sistemas de IA. ¿Qué debe recomendar?",
+[["Extraer datos de bibliotecas de SharePoint mediante scraping",0,"No es confiable ni ofrece gestión de datos estructurada."],
+ ["Mantener tablas de producto separadas para cada agente",0,"Crea duplicación y problemas de sincronización."],
+ ["Extraer detalles de producto de PDF de proveedores",0,"Ineficiente e inadecuado como estrategia central de datos."],
+ ["Centralizar el catálogo en Microsoft Dataverse y exponer los datos a ambos agentes",1,""]],
+"Dataverse es una plataforma de datos central para Dynamics 365 y Power Platform: una única fuente de verdad gobernada.",
+"Varios agentes, un dato = Dataverse como fuente única de verdad.");
+
+/* 31 */
+S("ALM y despliegue","Debe diseñar un proceso de ALM para un entorno de Power Platform que contiene la Solución1, la cual debe incluir un conector personalizado para copilot en Dynamics 365 Customer Service. Requisitos: el conector debe poder implementarse de forma consistente entre entornos como parte del ALM, y debe poder editarse solo en el entorno de desarrollo. ¿Qué debe incluir en el diseño?",
+[["Agregar el conector a GitHub",0,"Da control de código, pero no empaqueta ni despliega en Power Platform."],
+ ["Compartir el conector",0,"Solo otorga permisos; no da gobernanza de ALM."],
+ ["Crear el conector en la solución predeterminada",0,"La solución predeterminada no sirve para ciclo de vida controlado."],
+ ["Agregar el conector personalizado a la Solución1",1,""]],
+"Al estar en la solución, el conector viaja con el paquete; como administrada en destino, solo se edita en desarrollo.",
+"Conector (o cualquier componente) + ALM = dentro de una solución, nunca la predeterminada.");
+
+/* 32 */
+S("ALM y despliegue","Un agente de Copilot Studio usa conectores personalizados para interactuar con API empresariales. Debe recomendar un proceso de ALM que garantice que los conectores se implementen de forma consistente en dev, test y prod, y que cumpla requisitos de gobernanza y trazabilidad. ¿Qué debe recomendar?",
+[["Hospedar las API como Azure Functions",0,"No resuelve el ciclo de vida de los conectores."],
+ ["Administrar los conectores como componentes de solución e implementarlos con pipelines de ALM",1,""],
+ ["Usar variables de entorno para los conectores",0,"Solo administran valores de configuración como endpoints o secretos."],
+ ["Usar soluciones no administradas",0,"Son para desarrollo y no dan el control de despliegue empresarial."]],
+"Conectores como componentes de solución administrada + pipelines (Power Platform o Azure DevOps) = versión, empaquetado, gobierno y repetibilidad.",
+"Solución + pipeline = ALM empresarial.");
+
+/* 33 */
+P("Foundry y MCP","Una empresa tiene un entorno de Power Platform. Debe crear dos agentes. El Agente1 debe ser extensible con Semantic Kernel y conectarse a varias aplicaciones y API de negocio. El Agente2 debe conectarse directamente a datos de Microsoft Dataverse y poder incrustarse en una app de lienzo de Power Apps. ¿Qué debe usar para crear cada agente?",
+[{l:"Agente1: extensible con Semantic Kernel, varias apps y API",a:0,why:"Foundry es la plataforma pro-code para orquestación avanzada, Semantic Kernel, plugins y conectividad multisistema."},
+ {l:"Agente2: Dataverse directo y embebido en Power Apps",a:1,why:"Copilot Studio nace sobre Power Platform: integra Dataverse y se incrusta en Power Apps. Foundry añadiría complejidad innecesaria."}],
+"Semantic Kernel / pro-code = Foundry. Dataverse + Power Apps / low-code = Copilot Studio.","Foundry = fundadores programan. Copilot Studio = low-code, Dataverse y Power Apps.",
+["Microsoft Foundry","Microsoft Copilot Studio","Azure Logic Apps","Copilot en Power Apps"]);
+
+/* 34 */
+S("Gobernanza y seguridad","Una empresa tiene agentes de Microsoft Foundry que generan respuestas con recursos de Azure OpenAI, desplegados en EE. UU. y Europa. Un mandato exige que los agentes y sus datos de grounding cumplan las regulaciones de residencia y movimiento de datos. Debe recomendar una solución de gobernanza. ¿Qué debe incluir?",
+[["Defender for Cloud",0,"Es postura de seguridad y protección de amenazas, no residencia de datos."],
+ ["Azure Policy",0,"Restringe ubicaciones de despliegue, pero no da gobernanza completa de los datos de grounding."],
+ ["Azure Monitor",0,"Es telemetría y monitoreo operativo."],
+ ["Microsoft Purview",1,""]],
+"Purview clasifica, gobierna y audita datos: linaje, cumplimiento y controles sobre dónde se almacenan y cómo se mueven.",
+"Residencia y movimiento de DATOS = Purview. Regiones de despliegue de RECURSOS = Azure Policy.");
+
+/* 35 */
+M("ROI y costos","Una solución de IA creada con Copilot Studio y Power Platform la usan los equipos de ventas, marketing y servicio al cliente. Realiza un análisis de retorno de la inversión en IA (ROAI) para evaluar su impacto. Debe identificar los factores de negocio medibles. ¿Cuáles DOS debe identificar?",
+[["Reducción del tiempo promedio de resolución de casos",1,"Beneficio operativo directo, muy medible."],
+ ["Capitalización de mercado",0,"Depende de muchas variables externas; no se ata al desempeño operativo de la IA."],
+ ["Productividad económica del mercado",0,"Es un factor macroeconómico, no un factor medible de la solución."],
+ ["Aumento de la productividad de los empleados",1,"Automatizar trabajo repetitivo es uno de los resultados más medibles."],
+ ["Reconocimiento de marca",0,"Difícil de cuantificar directamente en un ROAI operativo."]],
+"Elige indicadores operativos medibles: tiempos y productividad.",
+"ROAI: lo que se mide en la operación (tiempo, productividad, costo). Lo macro o intangible, fuera.");
+
+/* 36 */
+P("Gobernanza y seguridad","Una empresa tiene una solución de IA en la nube que usa modelos de Azure OpenAI. Debe diseñar una solución de monitoreo que: supervise las métricas de rendimiento y la salud operativa de los modelos, y supervise las apps y los agentes de IA para el cumplimiento. Debe usar capacidades nativas de Azure y minimizar el esfuerzo de desarrollo. ¿Qué debe usar para cada requisito? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Rendimiento y salud operativa de los modelos",a:0,why:"Azure Monitor da telemetría, diagnósticos, registros, alertas y análisis de rendimiento de forma nativa."},
+ {l:"Supervisar apps y agentes de IA para cumplimiento",a:1,why:"Purview ofrece auditoría, políticas, clasificación y seguimiento de cumplimiento para gobernanza de IA."}],
+"Salud y rendimiento = Azure Monitor. Cumplimiento = Purview.","API Management = gobierno de API. Policy = configuración. Defender = protección. Stream Analytics = flujos de eventos.",
+["Azure Monitor","Microsoft Purview","Azure API Management","Azure Policy","Microsoft Defender","Azure Stream Analytics"]);
+Q[Q.length-1].w="Nota: el video de origen enuncia el orden al revés, pero su propia explicación asigna rendimiento → Azure Monitor y cumplimiento → Purview. Esa es la lógica que se evalúa.";
+
+/* 37 */
+S("Gobernanza y seguridad","Una app de lienzo (App1) está en el entorno ENV1 de Power Platform. ENV1 usa una clave administrada por el cliente para el cifrado de datos. App1 se conecta a varios orígenes de datos. Debe recomendar una solución para agregar componentes de copilot a App1 sin modificar la configuración actual de seguridad ni de cifrado de ENV1. ¿Qué debe incluir?",
+[["Modificar los orígenes de datos existentes para admitir copilot",0,"No se necesita modificar los datos solo para integrar copilot."],
+ ["Duplicar y volver a publicar la app",0,"No habilita la funcionalidad de copilot."],
+ ["Habilitar las funciones de copilot para ENV1",1,""],
+ ["Mover la app a un entorno con claves administradas por Microsoft",0,"Violaría el requisito de conservar el cifrado actual."]],
+"Habilitar copilot a nivel de entorno funciona incluso con claves administradas por el cliente y no cambia la seguridad.",
+"«Sin modificar seguridad/cifrado» = habilitar a nivel de entorno, sin mover ni cambiar nada.");
+
+/* 38 */
+M("Dynamics 365","Una empresa usa Dynamics 365 para sus operaciones de servicio. Los despachadores coordinan solicitudes y los técnicos hacen trabajo programado en sitio. Debe diseñar una solución con Copilot que mejore la eficiencia, con IA para organizar y resolver órdenes de trabajo, y apoyo contextual de IA a los trabajadores de primera línea al preparar y completar citas con clientes. ¿Qué DOS componentes debe incluir?",
+[["Copilot service workspace",0,"Es sobre todo una experiencia de interfaz, no la capacidad de IA de Field Service."],
+ ["Copilot en Outlook",0,"Se centra en productividad interna."],
+ ["Dynamics 365 Customer Service",0,"Está centrado en contact center y casos, no en servicio de campo."],
+ ["Copilot para Customer Service",0,"Mismo problema: contact center y gestión de casos."],
+ ["Copilot en Field Service",1,"Ayuda a despachadores a organizar y resolver órdenes de trabajo con resúmenes y recomendaciones."],
+ ["Aplicación móvil de Dynamics 365 Field Service",1,"Los técnicos reciben soporte contextual de IA en el móvil al preparar y completar citas."]],
+"Despacho = Copilot en Field Service. Técnicos en campo = app móvil de Field Service.",
+"Técnicos en sitio = Field Service (no Customer Service).");
+
+/* 39 */
+P("Gobernanza y seguridad","Una empresa usa modelos de Azure OpenAI con datos de grounding en Fabric. Los modelos se ajustan con conjuntos de datos propios. Debe diseñar una solución de gobernanza que restrinja el acceso a los datos de grounding solo a los roles asignados y restrinja el ajuste del modelo solo al equipo de ingeniería de IA. ¿Qué debe incluir para cada requisito? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Restringir el acceso a los datos de grounding a los roles asignados",a:0,why:"Las políticas de acceso de Purview aplican control por roles sobre conjuntos de datos sensibles."},
+ {l:"Restringir el ajuste (fine-tuning) al equipo de ingeniería de IA",a:1,why:"El RBAC de Foundry da permisos granulares sobre recursos y operaciones de ajuste."}],
+"Datos de grounding = Purview. Quién puede ajustar modelos = RBAC en Foundry.","Content Safety filtra contenido. Monitor alerta. Policy audita cumplimiento. Ninguno gestiona autorización.",
+["Políticas de acceso de Microsoft Purview","RBAC en Microsoft Foundry","Azure AI Content Safety","Alertas de Azure Monitor","Azure Policy","Registros de recursos de ARM"]);
+
+/* 40 */
+S("Copilot Studio","Una empresa crea pedidos de venta manualmente. Debe diseñar una solución de IA que automatice: guardar los detalles del pedido en una base de datos, actualizar su estado, extraer los detalles de un archivo de pedido y preparar y enviar un correo de confirmación. La solución debe minimizar el esfuerzo de desarrollo y admitir automatización inteligente e integración. ¿Qué debe incluir?",
+[["Azure Logic Apps",0,"Integra y automatiza, pero sin la experiencia de IA de negocio de bajo código."],
+ ["SDK de Semantic Kernel",0,"Es pro-code: exige mucho más desarrollo."],
+ ["Servicio de agentes de Microsoft Foundry",0,"Pensado para orquestación multiagente avanzada; innecesariamente complejo."],
+ ["Un agente de Copilot Studio que use flujos de Power Automate",1,""]],
+"Low-code con conectores, documentos, correo y bases de datos más IA conversacional: mínimo esfuerzo.",
+"«Minimizar esfuerzo de desarrollo» = Copilot Studio + Power Automate, nunca pro-code.");
+
+/* 41 */
+S("ROI y costos","Una empresa de manufactura quiere implementar un agente que automatice el procesamiento de facturas de proveedores. Debe evaluar las implicaciones financieras; preocupa el sobrecosto. La solución debe considerar el costo total de propiedad, los ahorros esperados por la automatización y si conviene ampliar las capacidades de IA existentes. ¿Qué debe incluir en el diseño?",
+[["Un análisis de punto de equilibrio",0,"Solo indica cuándo costos igualan beneficios; es demasiado limitado."],
+ ["Adoptar agentes prediseñados",0,"Puede reducir esfuerzo, pero no evalúa el impacto financiero."],
+ ["Entrenar un modelo personalizado",0,"Es una decisión técnica, no un marco de evaluación financiera."],
+ ["Un análisis de retorno de la inversión en IA (ROAI)",1,""]],
+"El ROAI considera costos de implementación y operación, beneficios, productividad, riesgos y valor a largo plazo.",
+"TCO + ahorros + decidir ampliar = ROAI.");
+
+/* 42 */
+S("IA responsable","Una solución en producción usa un modelo de Azure OpenAI para generar correos de marketing para clientes existentes. En una revisión interna se detecta que genera correos distintos según los rasgos del cliente. Debe recomendar una estrategia para mitigar el sesgo, alineada con los principios de IA responsable de Microsoft. ¿Qué debe recomendar?",
+[["Aumentar la aleatoriedad (temperatura) de las respuestas",0,"Agrega variación, pero no resuelve el sesgo."],
+ ["Modificar las instrucciones del sistema (metaprompt) de la solución",1,""],
+ ["Reentrenar con un conjunto de datos más grande",0,"No garantiza menos sesgo y normalmente no se hace con modelos base de Azure OpenAI."],
+ ["Modificar los datos de entrenamiento originales del modelo",0,"El cliente generalmente no controla los datos del modelo base."]],
+"Los modelos de Azure OpenAI son administrados; la mitigación práctica es actualizar las instrucciones del sistema para imponer reglas de equidad y consistencia.",
+"Sesgo en Azure OpenAI = ajustar el metaprompt / instrucciones del sistema. Equidad es el principio.");
+
+/* 43 */
+P("Foundry y MCP","Debe recomendar una solución de Power Platform para atención al cliente que incluya capacidades de IA en Power Automate. Requisitos: usar un espacio de trabajo centralizado para modelos de IA, y generar resúmenes cortos de grandes cantidades de texto no estructurado (notas de casos o transcripciones) sin requerir entrenamiento ni código adicional. ¿Qué debe incluir para cada requisito? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Espacio de trabajo centralizado para modelos de IA",a:0,why:"El Hub de Foundry centraliza administración de recursos de IA, gobierno, orquestación y espacio de trabajo."},
+ {l:"Resúmenes de texto no estructurado sin entrenamiento ni código",a:5,why:"Los prompts prediseñados de AI Builder cubren resumen y generación de contenido en bajo código dentro de Power Automate."}],
+"Espacio central de modelos = Foundry Hub. Resumir sin código = prompt prediseñado de AI Builder.","Dataverse es plataforma de datos. Azure OpenAI exigiría más desarrollo. GitHub Copilot es para programar.",
+["Hub de Microsoft Foundry","Microsoft Copilot Studio","Microsoft Dataverse","Azure OpenAI","GitHub Copilot","Prompt prediseñado de AI Builder"]);
+
+/* 44 */
+S("Datos y conocimiento","Debe diseñar una solución de Microsoft 365 Copilot para optimizar la productividad. Los empleados deben poder consultar contenido de un subconjunto de sitios de SharePoint Online y de Teams con prompts en lenguaje natural, y recibir respuestas contextualmente relevantes en Microsoft 365 Copilot. ¿Qué debe incluir en el diseño?",
+[["Flujos de escritorio de Power Automate",0,"Innecesarios para el grounding de Copilot."],
+ ["Modificar solo la configuración de SharePoint",0,"Por sí sola no da integración semántica con IA."],
+ ["Crear una API REST personalizada",0,"Innecesaria: Graph ya integra de forma nativa con Microsoft 365 Copilot."],
+ ["Configurar el acceso a Microsoft Graph",1,""]]
+,"Microsoft Graph es la capa de acceso a datos y contexto de Microsoft 365 Copilot, y respeta los permisos existentes.",
+"Copilot de Microsoft 365 + SharePoint/Teams = Microsoft Graph (y respeta permisos).");
+
+/* 45 */
+S("Copilot Studio","Debe diseñar un agente de Copilot Studio para atención al cliente que recupere de forma segura datos de garantía de productos desde una API REST. La solución debe minimizar el esfuerzo de desarrollo. ¿Qué debe incluir?",
+[["Un tema con respuestas de garantía escritas de forma estática",0,"No da integración con la API."],
+ ["Crear un conector personalizado en Copilot Studio y usarlo para llamar a la API",1,""],
+ ["Usar computer use para leer la información en pantalla",0,"Es scraping de pantalla: poco fiable cuando ya existe una API REST."],
+ ["Configurar el tema de reserva (fallback)",0,"Solo atiende conversaciones no reconocidas, no recupera datos de forma segura."]],
+"Los conectores personalizados son el mecanismo de bajo código para API: soportan OAuth, claves de API y Microsoft Entra ID.",
+"API REST propia = conector personalizado. Hay API, no uses computer use.");
+
+/* 46 */
+P("Monitoreo y pruebas","Un agente de Copilot Studio lleva tres meses en producción con comentarios positivos. Debe identificar la cantidad de preguntas sin respuesta del agente y la cantidad de sesiones abandonadas entre los usuarios y el agente. ¿Qué información de Copilot Studio debe usar? (Cada opción puede usarse una vez, más de una vez o ninguna.)",
+[{l:"Número de preguntas sin respuesta",a:0,why:"Según el curso, la calidad de las respuestas generadas refleja cuántas veces el agente genera respuestas con éxito; una baja calidad o fallos indican preguntas sin resolver."},
+ {l:"Número de sesiones abandonadas",a:1,why:"Los resultados de conversación registran cómo terminan: completadas, escaladas, fallidas y abandonadas."}],
+"Sesiones abandonadas = resultados de conversación. Respuestas sin resolver = calidad de respuestas generadas.","Reacciones = pulgar arriba o abajo. Encuestas = satisfacción. Ninguna cuenta abandonos.",
+["Calidad de las respuestas generadas","Resultados de conversación","Reacciones","Resultados de encuestas"]);
+Q[Q.length-1].w="El primer mapeo es el del banco del curso. Lo seguro para el examen: abandonadas = resultados de conversación.";
+
+/* 47 */
+S("Monitoreo y pruebas","Una empresa tiene un modelo de IA generativa en Microsoft Foundry. Debe evaluar la salida del modelo para medir la calidad general y la coherencia de las respuestas. La evaluación debe usar GPT-4 como juez y devolver una puntuación numérica para cada salida. ¿Qué tipo de métrica debe usar?",
+[["Calidad de IA (métricas NLP)",0,"Usa técnicas NLP tradicionales, no un juez GPT-4."],
+ ["Métricas de riesgo y seguridad",0,"Se centran en contenido dañino o inseguro."],
+ ["Fundamentación (groundedness)",0,"Evalúa si la respuesta se apoya en la fuente, no la coherencia general."],
+ ["Calidad de IA (asistida por IA)",1,""]],
+"Las métricas asistidas por IA usan un modelo como GPT-4 para puntuar coherencia, fluidez, relevancia y calidad.",
+"«GPT-4 como juez» = calidad de IA asistida por IA.");
+
+/* 48-50 */
+P("Dynamics 365","Una empresa tiene un entorno de Dynamics 365 Sales con Microsoft Copilot habilitado. Debe personalizar copilot ajustando cómo se generan o se presentan los resúmenes de oportunidades a los usuarios. Para cada solución propuesta, indique si cumple el objetivo.",
+[{l:"Solución: agregar campos al resumen de oportunidad",a:0,c:SN,why:"Copilot de ventas permite elegir los campos del resumen, así se adapta qué información ven los usuarios."},
+ {l:"Solución: crear flujos de Power Automate para activar resúmenes personalizados de copilot",a:1,c:SN,why:"Power Automate orquesta procesos; no controla cómo se genera ni se muestra el resumen nativo."},
+ {l:"Solución: configurar modelos de puntuación de clientes potenciales de AI Builder para influir en los resúmenes",a:1,c:SN,why:"Son análisis predictivo de leads, no personalización de los resúmenes de copilot."}],
+"Resumen de oportunidad = se personaliza con campos y configuración nativa de copilot.","Otra serie de tres con el mismo enunciado: revisa cada propuesta de forma independiente.");
+
+var TOPICS=[];
+Q.forEach(function(q){if(TOPICS.indexOf(q.t)<0)TOPICS.push(q.t)});
+
+/* ---------- estado ---------- */
+var st={queue:[],i:0,res:[],checked:false,order:null,label:"",answers:{}};
+function missedIds(){return LS.get("ab100_missed",[])}
+function setMissed(a){LS.set("ab100_missed",a)}
+
+/* ---------- inicio ---------- */
+function home(){
+  $app.innerHTML="";
+  var last=LS.get("ab100_last",null);
+  var miss=missedIds().filter(function(id){return Q[id]});
+  var s=el("div","stat");
+  s.appendChild(el("b",null,Q.length+" preguntas disponibles"));
+  s.appendChild(el("p","mut","Aprobar requiere cerca de 70 % (700 de 1000). Orden y opciones se mezclan cada vez para que no memorices letras."));
+  if(last)s.appendChild(el("p","mut","Último intento: "+last.score+" de "+last.total+" ("+last.pct+" %)."));
+  $app.appendChild(s);
+  var r=el("div","row");
+  var b1=el("button","btn","Simulacro completo ("+Q.length+")");b1.onclick=function(){start(Q,"Simulacro completo")};
+  r.appendChild(b1);
+  var b2=el("button","btn ghost","Repasar errores ("+miss.length+")");b2.disabled=!miss.length;
+  b2.onclick=function(){start(miss.map(function(id){return Q[id]}),"Repaso de errores")};
+  r.appendChild(b2);
+  $app.appendChild(r);
+  $app.appendChild(el("h2",null,"Practicar por tema"));
+  var g=el("div","topics");
+  TOPICS.forEach(function(t){
+    var list=Q.filter(function(q){return q.t===t});
+    var b=el("button","topicbtn");
+    b.appendChild(el("span",null,t));b.appendChild(el("b",null,String(list.length)));
+    b.onclick=function(){start(list,t)};
+    g.appendChild(b);
+  });
+  $app.appendChild(g);
+}
+
+function start(list,label){
+  st.queue=shuf(list);st.i=0;st.res=[];st.label=label;st.answers={};
+  showQ();
+}
+
+/* ---------- pregunta ---------- */
+function showQ(){
+  var q=st.queue[st.i];st.checked=false;
+  $app.innerHTML="";window.scrollTo(0,0);
+  var meta=el("div","qmeta");
+  meta.appendChild(el("span",null,"Pregunta "+(st.i+1)+" de "+st.queue.length));
+  meta.appendChild(el("span",null,q.t));
+  $app.appendChild(meta);
+  var bar=el("div","bar");var fill=document.createElement("i");fill.style.width=(st.i/st.queue.length*100)+"%";bar.appendChild(fill);$app.appendChild(bar);
+
+  var sheet=el("div","sheet");
+  sheet.appendChild(el("p","stem",q.stem));
+  var body=el("div");sheet.appendChild(body);
+  var fb=el("div");sheet.appendChild(fb);
+  $app.appendChild(sheet);
+
+  var inputs=[];
+  if(q.k==="s"||q.k==="m"){
+    var n=q.opts.filter(function(o){return o[1]}).length;
+    body.appendChild(el("p","inst",q.k==="s"?"Seleccione la respuesta correcta.":"Seleccione las "+n+" respuestas correctas."));
+    var ord=shuf(q.opts.map(function(_,i){return i}));
+    st.order=ord;
+    ord.forEach(function(oi,pos){
+      var lab=el("label","opt");
+      var inp=document.createElement("input");
+      inp.type=q.k==="s"?"radio":"checkbox";inp.name="o";inp.value=oi;
+      lab.appendChild(inp);
+      lab.appendChild(el("span","lt",String.fromCharCode(65+pos)+"."));
+      var tx=el("span");tx.appendChild(el("span",null,q.opts[oi][0]));
+      lab.appendChild(tx);
+      body.appendChild(lab);
+      inputs.push({inp:inp,lab:lab,tx:tx,oi:oi});
+    });
+  }else{
+    body.appendChild(el("p","inst","Para cada requisito, elija la opción correcta."));
+    st.order=[];
+    q.parts.forEach(function(p,pi){
+      var ch=p.c||q.shared;
+      var fixed=(ch===SN);
+      var idx=ch.map(function(_,i){return i});
+      if(!fixed)idx=shuf(idx);
+      var box=el("div","part");
+      var id="sel"+pi;
+      var l=el("label","pl",p.l);l.setAttribute("for",id);box.appendChild(l);
+      var sel=document.createElement("select");sel.id=id;
+      var ph=document.createElement("option");ph.value="";ph.textContent="Seleccione…";sel.appendChild(ph);
+      idx.forEach(function(ci){var o=document.createElement("option");o.value=ci;o.textContent=ch[ci];sel.appendChild(o)});
+      box.appendChild(sel);
+      var f=el("div");box.appendChild(f);
+      body.appendChild(box);
+      inputs.push({sel:sel,f:f,ch:ch,p:p});
+    });
+  }
+
+  var row=el("div","row");
+  var back=el("button","btn ghost",st.i>0?"Anterior":"Inicio");
+  back.onclick=function(){if(st.i>0){st.i--;showQ()}else{home()}};
+  row.appendChild(back);
+  var cb=el("button","btn","Comprobar");
+  var nb=el("button","btn hide",st.i+1<st.queue.length?"Siguiente":"Ver resultado");
+  row.appendChild(cb);row.appendChild(nb);sheet.appendChild(row);
+  function ready(){
+    if(q.k==="s")return inputs.some(function(x){return x.inp.checked});
+    if(q.k==="m")return inputs.some(function(x){return x.inp.checked});
+    return inputs.every(function(x){return x.sel.value!==""});
+  }
+  cb.disabled=true;
+  sheet.addEventListener("change",function(){if(!st.checked)cb.disabled=!ready()});
+  nb.onclick=function(){st.i++;if(st.i<st.queue.length)showQ();else results()};
+  var saved=st.answers[q.id];
+  if(saved){
+    if(q.k==="s"||q.k==="m"){
+      inputs.forEach(function(x){x.inp.checked=saved.indexOf(x.oi)>=0});
+    }else{
+      inputs.forEach(function(x){x.sel.value=String(saved[x.p.l])});
+    }
+    st.checked=true;cb.disabled=true;cb.classList.add("hide");nb.classList.remove("hide");
+    grade(q,inputs,fb);
+  }
+  cb.onclick=function(){
+    if(st.checked||!ready())return;
+    st.checked=true;cb.classList.add("hide");nb.classList.remove("hide");
+    if(q.k==="s"||q.k==="m"){
+      st.answers[q.id]=inputs.filter(function(x){return x.inp.checked}).map(function(x){return x.oi});
+    }else{
+      st.answers[q.id]={};
+      inputs.forEach(function(x){st.answers[q.id][x.p.l]=parseInt(x.sel.value,10)});
+    }
+    var ok=grade(q,inputs,fb);
+    var existing=st.res.findIndex(function(r){return r.id===q.id});
+    if(existing>=0)st.res[existing]={id:q.id,ok:ok,t:q.t};
+    else st.res.push({id:q.id,ok:ok,t:q.t});
+    var m=missedIds();
+    if(ok){m=m.filter(function(x){return x!==q.id})}else if(m.indexOf(q.id)<0){m.push(q.id)}
+    setMissed(m);
+    nb.focus();
+  };
+}
+
+function grade(q,inputs,fb){
+  var ok=true;
+  if(q.k==="s"||q.k==="m"){
+    inputs.forEach(function(x){
+      var o=q.opts[x.oi];var chosen=x.inp.checked;x.inp.disabled=true;
+      var good=!!o[1];
+      if(good&&!chosen)ok=false;
+      if(!good&&chosen)ok=false;
+      if(good&&chosen)x.lab.classList.add("ok");
+      else if(!good&&chosen)x.lab.classList.add("bad");
+      else if(good&&!chosen)x.lab.classList.add("miss");
+      var txt=good?(o[2]||""):o[2];
+      if(good&&q.k==="s"&&!o[2])txt=q.ex;
+      if(txt){x.tx.appendChild(el("span","why",(good?"Correcta. ":(chosen?"Incorrecta. ":"Incorrecta. "))+txt))}
+      else if(good){x.tx.appendChild(el("span","why","Correcta."))}
+    });
+  }else{
+    inputs.forEach(function(x){
+      var v=parseInt(x.sel.value,10);var good=v===x.p.a;x.sel.disabled=true;
+      if(!good)ok=false;
+      x.sel.classList.add(good?"ok":"bad");
+      var d=el("p","pfb "+(good?"ok":"bad"));
+      d.appendChild(el("b",null,good?"Correcto. ":"Incorrecto. "));
+      if(!good)d.appendChild(document.createTextNode("Respuesta correcta: "+x.ch[x.p.a]+". "));
+      d.appendChild(document.createTextNode(x.p.why));
+      x.f.appendChild(d);
+    });
+  }
+  fb.appendChild(el("p","verdict "+(ok?"ok":"bad"),ok?"Correcto":"No es correcto"));
+  if(q.k==="m"||q.k==="s"){if(q.k==="m"||ok===false)fb.appendChild(el("p","ex",q.ex))}
+  else fb.appendChild(el("p","ex",q.ex));
+  if(q.tip){var tb=el("div","tipbox");tb.appendChild(el("b",null,"Cómo recordarlo: "));tb.appendChild(document.createTextNode(q.tip));fb.appendChild(tb)}
+  if(q.w){fb.appendChild(el("div","warnbox",q.w))}
+  return ok;
+}
+
+/* ---------- resultados ---------- */
+function results(){
+  $app.innerHTML="";
+  var total=st.res.length,score=st.res.filter(function(r){return r.ok}).length;
+  var pct=Math.round(score/total*100);
+  if(st.label==="Simulacro completo")LS.set("ab100_last",{score:score,total:total,pct:pct});
+  var s=el("div","stat");
+  s.appendChild(el("div","big "+(pct>=70?"pass":"fail"),pct+" %"));
+  s.appendChild(el("p",null,score+" de "+total+" correctas. "+(pct>=70?"Estás por encima de la línea de aprobación.":"Aún por debajo de 70 %: repasa los errores y los tips.")));
+  $app.appendChild(s);
+  $app.appendChild(el("h2",null,"Por tema"));
+  var by={};
+  st.res.forEach(function(r){by[r.t]=by[r.t]||{a:0,b:0};by[r.t].b++;if(r.ok)by[r.t].a++});
+  Object.keys(by).forEach(function(t){
+    var m=el("div","mrow");m.appendChild(el("span",null,t));
+    var v=by[t];m.appendChild(el("b",v.a/v.b>=0.7?"pass":"fail",v.a+"/"+v.b));$app.appendChild(m);
+  });
+  var wrong=st.res.filter(function(r){return !r.ok});
+  if(wrong.length){
+    $app.appendChild(el("h2",null,"Para repasar ("+wrong.length+")"));
+    wrong.forEach(function(r){
+      var q=Q[r.id];
+      var d=el("div","stat");d.appendChild(el("div","tagline",q.t));
+      d.appendChild(el("p",null,q.stem.length>150?q.stem.slice(0,147)+"…":q.stem));
+      d.appendChild(el("p","mut","Tip: "+(q.tip||"")));
+      $app.appendChild(d);
+    });
+  }
+  var row=el("div","row");
+  if(wrong.length){var rb=el("button","btn","Repetir solo las falladas");rb.onclick=function(){start(wrong.map(function(r){return Q[r.id]}),"Repaso de errores")};row.appendChild(rb)}
+  var hb=el("button","btn ghost","Volver al inicio");hb.onclick=home;row.appendChild(hb);
+  $app.appendChild(row);
+  window.scrollTo(0,0);
+}
+
+/* ---------- tips ---------- */
+var TIPS=
+'<h2>Cómo es el examen</h2>'+
+'<ul class="t"><li>Seis formatos: opción única, opción múltiple (te dicen cuántas), listas desplegables, arrastrar y soltar, sí/no en series y casos de estudio.</li>'+
+'<li><b>Series sí/no:</b> mismo enunciado, distinta solución en cada pregunta. Una vez que contestas, no puedes volver. Varias soluciones pueden servir, o ninguna.</li>'+
+'<li>En arrastrar y soltar, cada opción puede usarse una vez, varias o ninguna: no tachar las que ya usaste.</li>'+
+'<li>Es un examen de nivel experto: te evalúa como arquitecto, no como técnico. Piensa en requisitos, riesgo, costo y gobernanza.</li></ul>'+
+'<h2>Reglas de oro</h2>'+
+'<ul class="t">'+
+'<li><b>La opción más simple que cumple todo gana.</b> Si Copilot Studio, Power Automate o un agente prediseñado resuelven el requisito, no elijas Foundry, Semantic Kernel ni entrenar un modelo.</li>'+
+'<li><b>Lee las palabras de restricción:</b> «minimizar esfuerzo», «sin modificar», «sin intervención manual», «decisión final humana», «sin reentrenar».</li>'+
+'<li><b>Nunca apagar la seguridad</b> para arreglar el servicio: desactivar guardrails, filtros o cifrado casi siempre es incorrecto.</li>'+
+'<li><b>Producción = solución administrada</b> y despliegue automatizado. Lo no administrado es solo para desarrollo.</li>'+
+'<li><b>Humano en el circuito</b> en decisiones críticas (fraude, crédito, salud). La IA propone y puntúa; la persona decide.</li>'+
+'<li><b>Datos propios antes que conocimiento general</b> para reducir alucinaciones.</li>'+
+'<li><b>Sesgo en Azure OpenAI:</b> se corrige con instrucciones del sistema, no reentrenando el modelo base.</li></ul>'+
+'<h2>Palabra clave → respuesta</h2>'+
+'<div class="scroll"><table><thead><tr><th>Si la pregunta dice…</th><th>Piensa en…</th></tr></thead><tbody>'+
+'<tr><td>UI cambia, clics, sin API, apps de terceros</td><td>Computer use (Copilot Studio)</td></tr>'+
+'<tr><td>Herramientas externas en tiempo de ejecución, sin actualizar el agente</td><td>Servidor MCP (USB-C de la IA)</td></tr>'+
+'<tr><td>Varias fuentes de datos para un agente</td><td>Conectores de Power Platform</td></tr>'+
+'<tr><td>API REST propia, de forma segura</td><td>Conector personalizado</td></tr>'+
+'<tr><td>Frases cortas por tema / voz y contact center</td><td>NLU / NLU plus</td></tr>'+
+'<tr><td>Voz interactiva / precisión en decisiones</td><td>Funciones de voz de Copilot Studio / razonamiento profundo</td></tr>'+
+'<tr><td>Pro-code, Semantic Kernel, varias API</td><td>Foundry</td></tr>'+
+'<tr><td>Dataverse, Power Apps, low-code</td><td>Copilot Studio</td></tr>'+
+'<tr><td>Pasar de dev a prod</td><td>Solución administrada + pipelines</td></tr>'+
+'<tr><td>Copilot Studio vs Foundry en pipelines</td><td>Pipelines de Power Platform vs Azure DevOps</td></tr>'+
+'<tr><td>Endpoints o índices distintos por entorno</td><td>Variables de entorno</td></tr>'+
+'<tr><td>Conector en ALM</td><td>Dentro de una solución (no la predeterminada)</td></tr>'+
+'<tr><td>Restringir regiones de despliegue</td><td>Azure Policy</td></tr>'+
+'<tr><td>Cumplimiento continuo de recursos</td><td>Defender for Cloud</td></tr>'+
+'<tr><td>Residencia y movimiento de datos, auditoría de IA, acceso a datos</td><td>Microsoft Purview</td></tr>'+
+'<tr><td>Quién puede ajustar o usar modelos en Foundry</td><td>RBAC de Foundry</td></tr>'+
+'<tr><td>Telemetría y salud de agentes</td><td>Application Insights / Azure Monitor</td></tr>'+
+'<tr><td>Datos de Power BI como grounding</td><td>Modelo semántico respaldado (endorsed)</td></tr>'+
+'<tr><td>Un solo catálogo para varios agentes</td><td>Dataverse como fuente única</td></tr>'+
+'<tr><td>Copilot de Microsoft 365 sobre SharePoint y Teams</td><td>Microsoft Graph (respeta permisos)</td></tr>'+
+'<tr><td>Correos, respuestas en Outlook, reuniones con CRM</td><td>Microsoft 365 Copilot para ventas</td></tr>'+
+'<tr><td>Técnicos en sitio, órdenes de trabajo</td><td>Copilot en Field Service + app móvil</td></tr>'+
+'<tr><td>Resumir sin código ni entrenamiento</td><td>Prompt prediseñado de AI Builder</td></tr>'+
+'<tr><td>Costo antes de desplegar</td><td>Calculadora TCO de Azure</td></tr>'+
+'<tr><td>TCO + ahorros + ampliar capacidades</td><td>Análisis ROAI</td></tr>'+
+'<tr><td>GPT-4 como juez, coherencia</td><td>Calidad de IA asistida por IA</td></tr>'+
+'<tr><td>Respuestas inexactas en Copilot Studio</td><td>Calidad de respuestas generadas + temas con baja resolución</td></tr>'+
+'<tr><td>Sesiones abandonadas</td><td>Resultados de conversación</td></tr>'+
+'</tbody></table></div>'+
+'<h2>Trucos para recordar</h2>'+
+'<ul class="t">'+
+'<li><b>Gobierno en 4 verbos:</b> Policy <i>prohíbe</i>, Defender <i>vigila</i>, Purview <i>clasifica y audita</i>, Monitor <i>mide</i>.</li>'+
+'<li><b>Pruebas:</b> Integración = <i>entre apps</i>. UAT = <i>usuarios y procesos</i>. Drift = <i>deriva del modelo en el tiempo</i>. Rendimiento = <i>carga y velocidad</i>.</li>'+
+'<li><b>Métricas de evaluación:</b> Groundedness = <i>¿se apoya en la fuente?</i> Asistida por IA = <i>juez GPT-4 con nota</i>. NLP = <i>fórmulas clásicas</i>. Riesgo y seguridad = <i>contenido dañino</i>.</li>'+
+'<li><b>Managed</b> = <i>Mercado</i> (producción). <b>Unmanaged</b> = <i>Under construction</i> (desarrollo).</li>'+
+'<li><b>NLU plus</b>: el «plus» es para el <i>teléfono</i> (voz, IVR, contact center).</li>'+
+'<li><b>Costos:</b> antes = TCO; después = Cost Management; decisión de negocio = ROAI.</li></ul>'+
+'<h2>Errores típicos que cometen los candidatos</h2>'+
+'<ul class="t">'+
+'<li>Elegir Foundry o un modelo personalizado cuando el requisito dice minimizar esfuerzo.</li>'+
+'<li>Confundir Azure Policy (reglas de despliegue) con Purview (gobernanza de datos) y con Defender (amenazas y cumplimiento de recursos).</li>'+
+'<li>Responder «variables de entorno» cuando preguntan qué incluir en el paquete (la respuesta es agente + referencias) y viceversa.</li>'+
+'<li>Usar Customer Service para escenarios de servicio en campo (es Field Service).</li>'+
+'<li>Creer que Power Automate personaliza lo que genera copilot nativamente: orquesta procesos, no controla la generación.</li>'+
+'<li>Elegir métricas de infraestructura (latencia, entrenamiento) para medir calidad del contenido generado.</li>'+
+'<li>En series sí/no, razonar con la solución anterior en lugar de leer la actual.</li></ul>'+
+'<h2>Método para casos de estudio</h2>'+
+'<ul class="t"><li>Lee primero las <b>preguntas</b>, luego el caso, y subraya requisitos duros: regulación, residencia, PII, presupuesto, plazo de ROI.</li>'+
+'<li>Anota el entorno técnico (por ejemplo, un solo entorno de producción sin dev/test: señal de que hace falta ALM).</li>'+
+'<li>Cada respuesta debe cubrir: requisito de negocio, seguridad/gobernanza y esfuerzo mínimo.</li>'+
+'<li>En cálculos de ahorro: minutos ahorrados, volumen, tasa de adopción y costo por hora; solo ejecuciones exitosas suman.</li></ul>';
+
+document.getElementById("tips").innerHTML=TIPS;
+
+/* ---------- pestañas ---------- */
+var tabQ=document.getElementById("tabQ"),tabT=document.getElementById("tabT"),tipsEl=document.getElementById("tips");
+tabQ.onclick=function(){tabQ.setAttribute("aria-selected","true");tabT.setAttribute("aria-selected","false");$app.classList.remove("hide");tipsEl.classList.add("hide")};
+tabT.onclick=function(){tabT.setAttribute("aria-selected","true");tabQ.setAttribute("aria-selected","false");$app.classList.add("hide");tipsEl.classList.remove("hide");window.scrollTo(0,0)};
+
+home();
+</script>
+</body>
+</html>
